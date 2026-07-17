@@ -229,7 +229,7 @@ export class AdmissionsService {
   }
 
   async deleteDuplicate(admissionId: string, studentId: string) {
-    const deleteAdmission = this.prisma.admission.update({
+    await this.prisma.admission.update({
       where: { id: admissionId },
       data: { deletedAt: new Date(), status: 'CANCELLED' },
     });
@@ -246,7 +246,6 @@ export class AdmissionsService {
       });
     }
 
-    await deleteAdmission;
     return { success: true, message: 'Admission and duplicate student entry deleted successfully.' };
   }
 

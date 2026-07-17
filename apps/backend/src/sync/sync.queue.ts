@@ -14,8 +14,9 @@ export interface SyncJobData {
 @Injectable()
 export class SyncQueue {
   private readonly logger = new Logger(SyncQueue.name);
-  private queue: Queue<SyncJobData>;
-  private worker: Worker<SyncJobData>;
+  private queue: Queue<SyncJobData> | null = null;
+  private worker: Worker<SyncJobData> | null = null;
+  private isAvailable = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -72,10 +73,15 @@ export class SyncQueue {
       );
     });
 
+    this.isAvailable = true;
     this.logger.log('BullMQ sync queue initialized');
   }
 
   async enqueue(data: Omit<SyncJobData, 'retryAttempt'>): Promise<string> {
+    if (!this.isAvailable || !this.queue) {
+      this.logger.warn('Sync queue not available (Redis offline). Skipping enqueue.');
+      return '';
+    }
     const job = await this.queue.add('sync-to-sheets', {
       ...data,
       retryAttempt: 0,
@@ -86,7 +92,6 @@ export class SyncQueue {
   private async processJob(job: Job<SyncJobData>): Promise<void> {
     const { syncLogId, entityType, entityId, action } = job.data;
 
-    // Mark as in_progress
     await this.prisma.syncLog.update({
       where: { id: syncLogId },
       data: {
@@ -97,19 +102,14 @@ export class SyncQueue {
     });
 
     try {
-      // Fetch the full entity data from the database
       const entityData = await this.fetchEntityData(entityType, entityId);
-
-      // Push to Google Sheets
       await this.googleSheets.sync(entityType, entityId, action, entityData);
 
-      // Mark as completed
       await this.prisma.syncLog.update({
         where: { id: syncLogId },
         data: { status: 'COMPLETED' },
       });
     } catch (error: any) {
-      // Update error info; BullMQ handles retry via attempts/backoff
       await this.prisma.syncLog.update({
         where: { id: syncLogId },
         data: {
@@ -119,7 +119,7 @@ export class SyncQueue {
           retryCount: job.attemptsMade,
         },
       });
-      throw error; // Re-throw so BullMQ retries
+      throw error;
     }
   }
 
@@ -231,7 +231,7 @@ export class SyncQueue {
   }
 
   async onModuleDestroy() {
-    await this.queue.close();
-    await this.worker.close();
+    if (this.queue) await this.queue.close();
+    if (this.worker) await this.worker.close();
   }
 }

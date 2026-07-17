@@ -9,6 +9,6 @@ import { PrismaModule } from '../common/prisma.module';
   imports: [PrismaModule],
   controllers: [SyncController],
   providers: [SyncService, SyncQueue, GoogleSheetsService],
-  exports: [SyncService],
+  exports: [SyncService, GoogleSheetsService],
 })
 export class SyncModule {}

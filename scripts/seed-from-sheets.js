@@ -5,7 +5,7 @@
  *
  * Usage: npx ts-node scripts/seed-from-sheets.ts
  */
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();

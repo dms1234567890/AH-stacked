@@ -63,7 +63,7 @@ export class GoogleSheetsService {
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
 
-      this.sheets = google.sheets({ version: 'v4', auth });
+      this.sheets = google.sheets({ version: 'v4', auth } as any);
       this.initialized = true;
       this.logger.log('Google Sheets API client initialized');
     } catch (error: any) {
@@ -260,6 +260,92 @@ export class GoogleSheetsService {
       // Skip header row
       return values.slice(1);
     } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Fetch a single user by username from the Login Google Sheet.
+   */
+  async fetchUserFromSheet(username: string): Promise<{
+    username: string;
+    password: string;
+    post: string;
+    id?: string;
+    name?: string;
+    email?: string;
+    mobile?: string;
+  } | null> {
+    if (!this.initialized) return null;
+    const spreadsheetId = process.env.GOOGLE_LOGIN_SHEET_ID || '1_vUAFShQrvHRlJALfcnBCCZEZF7zHYGuulYV-kPifTI';
+    try {
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Login!A:G',
+      });
+      const rows = response.data.values || [];
+      const target = username.trim().toLowerCase();
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const sheetUsername = (row[0] || '').toString().trim();
+        if (sheetUsername.toLowerCase() === target) {
+          return {
+            username: sheetUsername,
+            password: (row[1] || '').toString().trim(),
+            post: (row[2] || 'ACADEMIC MANAGER').toString().trim(),
+            id: (row[3] || '').toString().trim() || undefined,
+            name: (row[4] || sheetUsername).toString().trim(),
+            email: (row[5] || '').toString().trim() || undefined,
+            mobile: (row[6] || '').toString().trim() || undefined,
+          };
+        }
+      }
+      return null;
+    } catch (error: any) {
+      this.logger.warn(`Could not read Login sheet: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch all users from the Login Google Sheet.
+   */
+  async fetchAllUsersFromSheet(): Promise<Array<{
+    username: string;
+    password: string;
+    post: string;
+    id?: string;
+    name?: string;
+    email?: string;
+    mobile?: string;
+  }>> {
+    if (!this.initialized) return [];
+    const spreadsheetId = process.env.GOOGLE_LOGIN_SHEET_ID || '1_vUAFShQrvHRlJALfcnBCCZEZF7zHYGuulYV-kPifTI';
+    try {
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Login!A:G',
+      });
+      const rows = response.data.values || [];
+      const users: any[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const username = (row[0] || '').toString().trim();
+        const password = (row[1] || '').toString().trim();
+        if (!username || !password) continue;
+        users.push({
+          username,
+          password,
+          post: (row[2] || 'ACADEMIC MANAGER').toString().trim(),
+          id: (row[3] || '').toString().trim() || undefined,
+          name: (row[4] || username).toString().trim(),
+          email: (row[5] || '').toString().trim() || undefined,
+          mobile: (row[6] || '').toString().trim() || undefined,
+        });
+      }
+      return users;
+    } catch (error: any) {
+      this.logger.warn(`Could not read Login sheet: ${error.message}`);
       return [];
     }
   }

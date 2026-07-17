@@ -65,6 +65,12 @@ interface UpdateStudentInput {
   changedById?: string;
 }
 
+function parseDateSafely(val: any): Date | undefined {
+  if (val === null || val === undefined || val === '') return undefined;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? undefined : d;
+}
+
 @Injectable()
 export class StudentsService {
   private readonly logger = new Logger(StudentsService.name);
@@ -242,9 +248,9 @@ export class StudentsService {
         studentName: data.studentName,
         startSession: data.startSession,
         endSession: data.endSession,
-        dateOfApplication: data.dateOfApplication ? new Date(data.dateOfApplication) : undefined,
+        dateOfApplication: parseDateSafely(data.dateOfApplication),
         fatherName: data.fatherName,
-        dob: data.dob ? new Date(data.dob) : undefined,
+        dob: parseDateSafely(data.dob),
         mobileNumbers: data.mobileNumbers,
         email: data.email,
         motherName: data.motherName,
@@ -308,7 +314,8 @@ export class StudentsService {
 
     const previousBatchId = (student as any).batchId;
     const updateData: any = { ...data };
-    if (data.dob) updateData.dob = new Date(data.dob);
+    if ('dob' in data) updateData.dob = parseDateSafely(data.dob);
+    if ('dateOfApplication' in (data as any)) updateData.dateOfApplication = parseDateSafely((data as any).dateOfApplication);
     delete updateData.changedById;
 
     await this.prisma.student.update({
