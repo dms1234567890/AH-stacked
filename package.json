@@ -1,0 +1,45 @@
+{
+  "name": "prime-academic-manager",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Academic Manager ERP - Monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "database"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --continue",
+    "build": "turbo run build --continue",
+    "lint": "turbo run lint --continue",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:generate": "cd database && npx prisma generate",
+    "db:push": "cd database && npx prisma db push",
+    "db:migrate": "cd database && npx prisma migrate dev",
+    "db:studio": "cd database && npx prisma studio",
+    "db:check": "node --env-file=.env scripts/check-database.js",
+    "db:local:up": "docker compose up -d postgres",
+    "db:local:down": "docker compose down",
+    "frontend:dev": "cd apps/frontend && npm run dev",
+    "backend:dev": "cd apps/backend && npm run start:dev"
+  },
+  "nodeEnv": {
+    "windows": {
+      "PATH": "C:\\node20\\node-v20.18.0-win-x64;%PATH%"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.8.2",
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "cloudinary": "^2.10.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@prime/database",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate dev",
+    "db:studio": "npx prisma studio",
+    "db:seed": "npx prisma db seed"
+  },
+  "devDependencies": {
+    "@prisma/client": "6.19.3",
+    "prisma": "6.19.3"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

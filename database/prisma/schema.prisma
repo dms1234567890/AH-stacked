@@ -1,0 +1,411 @@
+// This is your Prisma schema file for Prime Academic Manager ERP
+// PostgreSQL is the source of truth. Google Sheets is for reporting only.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// AUTHENTICATION & USERS
+// ============================================================
+
+model User {
+  id            String          @id @default(uuid()) @db.Uuid
+  username      String          @unique
+  passwordHash  String          @map("password_hash")
+  post          String          @default("ACADEMIC MANAGER") // Role description
+  name          String
+  email         String?
+  mobile        String?
+  role          UserRole        @default(STAFF)
+  isActive      Boolean         @default(true) @map("is_active")
+  lastLoginAt   DateTime?       @map("last_login_at")
+  refreshToken  String?         @map("refresh_token")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  tasksGiven        Task[]      @relation("TaskGiver")
+  tasksRated        TaskRating[]
+  batchChanges      BatchChangeLog[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+  TEACHER
+}
+
+// ============================================================
+// EMPLOYEES & TEACHERS
+// ============================================================
+
+model Employee {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String
+  employeeId    String          @unique @map("employee_id")
+  email         String?
+  department    String?
+  designation   String?
+  phone         String?
+  isActive      Boolean         @default(true) @map("is_active")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  tasks         Task[]
+  taskRatings   TaskRating[]
+
+  @@map("employees")
+}
+
+model Teacher {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String
+  teacherId     String          @unique @map("teacher_id")
+  email         String?
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  classSchedules  ClassSchedule[]
+
+  @@map("teachers")
+}
+
+// ============================================================
+// SUBJECTS
+// ============================================================
+
+model Subject {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String          @map("name")
+  code          String          @unique @map("code")
+  isActive      Boolean         @default(true) @map("is_active")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  batchSubjects   BatchSubject[]
+  classSchedules  ClassSchedule[]
+
+  @@map("subjects")
+}
+
+// ============================================================
+// BATCHES
+// ============================================================
+
+model Batch {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String          @unique
+  classRoom     String?         @map("class_room")
+  isActive      Boolean         @default(true) @map("is_active")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  subjects        BatchSubject[]
+  students        Student[]
+  classSchedules  ClassSchedule[]
+  batchChanges    BatchChangeLog[]
+
+  @@map("batches")
+}
+
+model BatchSubject {
+  id            String          @id @default(uuid()) @db.Uuid
+  batchId       String          @map("batch_id") @db.Uuid
+  subjectId     String          @map("subject_id") @db.Uuid
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  subject       Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, subjectId])
+  @@map("batch_subjects")
+}
+
+// ============================================================
+// STUDENTS
+// ============================================================
+
+model Student {
+  id                String          @id @default(uuid()) @db.Uuid
+  studentId         String          @unique @map("student_id")
+  startSession      String?         @map("start_session")
+  endSession        String?         @map("end_session")
+  dateOfApplication DateTime?       @map("date_of_application")
+  studentName       String          @map("student_name")
+  fatherName        String?         @map("father_name")
+  dob               DateTime?       @map("dob")
+  mobileNumbers     String?         @map("mobile_numbers")
+  email             String?
+  motherName        String?         @map("mother_name")
+  category          String?
+  fatherOccupation  String?         @map("father_occupation")
+  defenceService    String?         @map("defence_service")
+  jobDescription    String?         @map("job_description")
+  class             String?
+  presentSchool     String?         @map("present_school")
+  batchId           String?         @map("batch_id") @db.Uuid
+  additionalLanguage String?        @map("additional_language")
+  program           String?
+  status            StudentStatus   @default(ACTIVE)
+
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  deletedAt         DateTime?       @map("deleted_at")
+
+  // Relations
+  batch             Batch?          @relation(fields: [batchId], references: [id])
+  batchChanges      BatchChangeLog[]
+
+  @@index([batchId])
+  @@index([studentName])
+  @@index([studentId])
+  @@map("students")
+}
+
+enum StudentStatus {
+  ACTIVE
+  CANCELLED
+  GRADUATED
+}
+
+model BatchChangeLog {
+  id            String          @id @default(uuid()) @db.Uuid
+  studentId     String          @map("student_id")
+  studentName   String?         @map("student_name")
+  previousBatch String?         @map("previous_batch")
+  newBatch      String          @map("new_batch")
+  changedById   String?         @map("changed_by_id") @db.Uuid
+  changedByName String?         @map("changed_by_name")
+  batchId       String?         @map("batch_id") @db.Uuid
+
+  dateOfChange  DateTime        @default(now()) @map("date_of_change")
+
+  // Relations
+  student       Student?        @relation(fields: [studentId], references: [studentId])
+  changedBy     User?           @relation(fields: [changedById], references: [id])
+  batch         Batch?          @relation(fields: [batchId], references: [id])
+
+  @@index([studentId])
+  @@map("batch_change_logs")
+}
+
+// ============================================================
+// ADMISSIONS
+// ============================================================
+
+model Admission {
+  id                String          @id @default(uuid()) @db.Uuid
+  studentId         String          @unique @map("student_id")
+  startSession      String?         @map("start_session")
+  endSession        String?         @map("end_session")
+  dateOfApplication DateTime?       @map("date_of_application")
+  studentName       String          @map("student_name")
+  fatherName        String?         @map("father_name")
+  dob               DateTime?       @map("dob")
+  mobileNumbers     String?         @map("mobile_numbers")
+  email             String?
+  motherName        String?         @map("mother_name")
+  category          String?
+  fatherOccupation  String?         @map("father_occupation")
+  defenceService    String?         @map("defence_service")
+  jobDescription    String?         @map("job_description")
+  class             String?
+  presentSchool     String?         @map("present_school")
+  program           String?
+  status            AdmissionStatus @default(PENDING)
+  enrolledAt        DateTime?       @map("enrolled_at")
+
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  deletedAt         DateTime?       @map("deleted_at")
+
+  @@index([studentId])
+  @@index([studentName])
+  @@map("admissions")
+}
+
+enum AdmissionStatus {
+  PENDING
+  ENROLLED
+  CANCELLED
+  DUPLICATE
+}
+
+// ============================================================
+// CLASS SCHEDULES
+// ============================================================
+
+model ClassSchedule {
+  id            String          @id @default(uuid()) @db.Uuid
+  date          DateTime
+  batchId       String          @map("batch_id") @db.Uuid
+  subjectId     String          @map("subject_id") @db.Uuid
+  startTime     String?         @map("start_time")
+  endTime       String?         @map("end_time")
+  teacherId     String?         @map("teacher_id") @db.Uuid
+  teacherName   String?         @map("teacher_name")
+  teacherEmail  String?         @map("teacher_email")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  batch         Batch           @relation(fields: [batchId], references: [id])
+  subject       Subject         @relation(fields: [subjectId], references: [id])
+  teacher       Teacher?        @relation(fields: [teacherId], references: [id])
+
+  @@index([date])
+  @@index([batchId])
+  @@map("class_schedules")
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+
+model Task {
+  id            String          @id @default(uuid()) @db.Uuid
+  token         String          @unique
+  employeeId    String?         @map("employee_id")
+  employeeName  String?         @map("employee_name")
+  taskType      String?         @map("task_type")
+  taskReason    String?         @map("task_reason")
+  taskRole      String?         @map("task_role")
+  taskDetail    String?         @map("task_detail")
+  taskEndingDate DateTime?       @map("task_ending_date")
+  giverId       String?         @map("giver_id") @db.Uuid
+  status        TaskStatus      @default(PENDING)
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  giver         User?           @relation("TaskGiver", fields: [giverId], references: [id])
+  employee      Employee?       @relation(fields: [employeeId], references: [employeeId])
+  completions   TaskCompletion[]
+  ratings       TaskRating[]
+
+  @@index([employeeId])
+  @@index([giverId])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  RATED
+}
+
+model TaskCompletion {
+  id            String          @id @default(uuid()) @db.Uuid
+  taskId        String          @map("task_id") @db.Uuid
+  completedAt   DateTime        @default(now()) @map("completed_at")
+  notes         String?
+
+  // Relations
+  task          Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_completions")
+}
+
+model TaskRating {
+  id            String          @id @default(uuid()) @db.Uuid
+  taskId        String          @map("task_id") @db.Uuid
+  employeeId    String?         @map("employee_id") @db.Uuid
+  rating        Int
+  raterId       String?         @map("rater_id") @db.Uuid
+  notes         String?
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  task          Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  rater         User?           @relation(fields: [raterId], references: [id])
+  employee      Employee?       @relation(fields: [employeeId], references: [id])
+
+  @@unique([taskId])
+  @@map("task_ratings")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id            String          @id @default(uuid()) @db.Uuid
+  action        String
+  entityType    String          @map("entity_type")
+  entityId      String?         @map("entity_id")
+  userId        String?         @map("user_id") @db.Uuid
+  userName      String?         @map("user_name")
+  oldValues     Json?           @map("old_values")
+  newValues     Json?           @map("new_values")
+  ipAddress     String?         @map("ip_address")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// SYNC TRACKING
+// ============================================================
+
+model SyncLog {
+  id            String          @id @default(uuid()) @db.Uuid
+  entityType    String          @map("entity_type")
+  entityId      String          @map("entity_id")
+  action        String          // INSERT, UPDATE, DELETE
+  status        SyncStatus      @default(PENDING)
+  retryCount    Int             @default(0) @map("retry_count")
+  errorMessage  String?         @map("error_message")
+  lastAttemptAt DateTime?       @map("last_attempt_at")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([entityType, entityId])
+  @@map("sync_logs")
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}

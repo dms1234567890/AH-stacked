@@ -1,0 +1,1 @@
+{"version":3,"file":"teachers.controller.d.ts","sourceRoot":"","sources":["teachers.controller.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,eAAe,EAAE,MAAM,oBAAoB,CAAC;AAIrD,qBAIa,kBAAkB;IACjB,OAAO,CAAC,QAAQ,CAAC,eAAe;gBAAf,eAAe,EAAE,eAAe;IAIvD,OAAO;IAMP,MAAM,CAAS,IAAI,EAAE;QAAE,IAAI,EAAE,MAAM,CAAC;QAAC,SAAS,EAAE,MAAM,CAAC;QAAC,KAAK,CAAC,EAAE,MAAM,CAAA;KAAE;CAG/E"}

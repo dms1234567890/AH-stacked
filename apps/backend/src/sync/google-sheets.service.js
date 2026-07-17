@@ -1,0 +1,280 @@
+var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, decorators, contextIn, initializers, extraInitializers) {
+    function accept(f) { if (f !== void 0 && typeof f !== "function") throw new TypeError("Function expected"); return f; }
+    var kind = contextIn.kind, key = kind === "getter" ? "get" : kind === "setter" ? "set" : "value";
+    var target = !descriptorIn && ctor ? contextIn["static"] ? ctor : ctor.prototype : null;
+    var descriptor = descriptorIn || (target ? Object.getOwnPropertyDescriptor(target, contextIn.name) : {});
+    var _, done = false;
+    for (var i = decorators.length - 1; i >= 0; i--) {
+        var context = {};
+        for (var p in contextIn) context[p] = p === "access" ? {} : contextIn[p];
+        for (var p in contextIn.access) context.access[p] = contextIn.access[p];
+        context.addInitializer = function (f) { if (done) throw new TypeError("Cannot add initializers after decoration has completed"); extraInitializers.push(accept(f || null)); };
+        var result = (0, decorators[i])(kind === "accessor" ? { get: descriptor.get, set: descriptor.set } : descriptor[key], context);
+        if (kind === "accessor") {
+            if (result === void 0) continue;
+            if (result === null || typeof result !== "object") throw new TypeError("Object expected");
+            if (_ = accept(result.get)) descriptor.get = _;
+            if (_ = accept(result.set)) descriptor.set = _;
+            if (_ = accept(result.init)) initializers.unshift(_);
+        }
+        else if (_ = accept(result)) {
+            if (kind === "field") initializers.unshift(_);
+            else descriptor[key] = _;
+        }
+    }
+    if (target) Object.defineProperty(target, contextIn.name, descriptor);
+    done = true;
+};
+var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
+    var useValue = arguments.length > 2;
+    for (var i = 0; i < initializers.length; i++) {
+        value = useValue ? initializers[i].call(thisArg, value) : initializers[i].call(thisArg);
+    }
+    return useValue ? value : void 0;
+};
+import { Injectable, Logger } from '@nestjs/common';
+import { google } from 'googleapis';
+/**
+ * Maps entity types to the Google Spreadsheet IDs and target sheet names.
+ */
+const SHEET_MAP = {
+    students: {
+        spreadsheetId: process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '',
+        sheetName: 'Students',
+    },
+    admissions: {
+        spreadsheetId: process.env.GOOGLE_ADMISSIONS_SHEET_ID || '',
+        sheetName: 'Admissions',
+    },
+    batches: {
+        spreadsheetId: process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '',
+        sheetName: 'Batches',
+    },
+    tasks: {
+        spreadsheetId: process.env.GOOGLE_LOGIN_SHEET_ID || '',
+        sheetName: 'Tasks',
+    },
+    employees: {
+        spreadsheetId: process.env.GOOGLE_LOGIN_SHEET_ID || '',
+        sheetName: 'Employees',
+    },
+    teachers: {
+        spreadsheetId: process.env.GOOGLE_LOGIN_SHEET_ID || '',
+        sheetName: 'Teachers',
+    },
+    subjects: {
+        spreadsheetId: process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '',
+        sheetName: 'Subjects',
+    },
+};
+let GoogleSheetsService = (() => {
+    let _classDecorators = [Injectable()];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    var GoogleSheetsService = class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            GoogleSheetsService = _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        logger = new Logger(GoogleSheetsService.name);
+        sheets;
+        initialized = false;
+        constructor() {
+            this.initializeClient();
+        }
+        initializeClient() {
+            try {
+                const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+                const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+                if (!serviceAccountEmail || !privateKey) {
+                    this.logger.warn('Google Service Account credentials not configured. Sheets sync will be skipped.');
+                    return;
+                }
+                const auth = new google.auth.JWT({
+                    email: serviceAccountEmail,
+                    key: privateKey,
+                    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+                });
+                this.sheets = google.sheets({ version: 'v4', auth });
+                this.initialized = true;
+                this.logger.log('Google Sheets API client initialized');
+            }
+            catch (error) {
+                this.logger.error(`Failed to initialize Google Sheets client: ${error.message}`);
+            }
+        }
+        /**
+         * Sync an entity's data to the appropriate Google Sheet.
+         * Uses append mode for INSERT, update-in-place for UPDATE, and clear for DELETE.
+         */
+        async sync(entityType, entityId, action, data) {
+            if (!this.initialized) {
+                this.logger.warn(`Sheets client not initialized. Skipping sync for ${entityType}:${entityId}`);
+                return;
+            }
+            const sheetInfo = SHEET_MAP[entityType];
+            if (!sheetInfo || !sheetInfo.spreadsheetId) {
+                this.logger.warn(`No sheet mapping for entity type: ${entityType}. Skipping.`);
+                return;
+            }
+            const { spreadsheetId, sheetName } = sheetInfo;
+            switch (action) {
+                case 'INSERT':
+                    await this.appendRow(spreadsheetId, sheetName, data);
+                    break;
+                case 'UPDATE':
+                    await this.updateRow(spreadsheetId, sheetName, entityId, data);
+                    break;
+                case 'DELETE':
+                    await this.deleteRow(spreadsheetId, sheetName, entityId);
+                    break;
+            }
+        }
+        /**
+         * Append a new row to the sheet. If the sheet has no header row,
+         * it writes the column headers first based on the data keys.
+         */
+        async appendRow(spreadsheetId, sheetName, data) {
+            try {
+                const existingHeaders = await this.getHeaders(spreadsheetId, sheetName);
+                let headers;
+                if (existingHeaders.length === 0) {
+                    // No header row; write headers from data keys + data row
+                    headers = Object.keys(data);
+                    await this.sheets.spreadsheets.values.update({
+                        spreadsheetId,
+                        range: `${sheetName}!A1`,
+                        valueInputOption: 'RAW',
+                        requestBody: {
+                            values: [headers, headers.map((h) => String(data[h] ?? ''))],
+                        },
+                    });
+                    this.logger.log(`Created header row and appended data to ${sheetName}`);
+                }
+                else {
+                    headers = existingHeaders;
+                    const row = headers.map((h) => String(data[h] ?? ''));
+                    await this.sheets.spreadsheets.values.append({
+                        spreadsheetId,
+                        range: `${sheetName}!A:A`,
+                        valueInputOption: 'RAW',
+                        insertDataOption: 'INSERT_ROWS',
+                        requestBody: { values: [row] },
+                    });
+                    this.logger.log(`Appended row to ${sheetName}`);
+                }
+            }
+            catch (error) {
+                this.logger.error(`Error appending row to ${sheetName}: ${error.message}`);
+                throw error;
+            }
+        }
+        /**
+         * Update a row identified by entityId. We find the row by scanning
+         * the first column for a matching ID. This is O(n) but fine for moderate sheets.
+         */
+        async updateRow(spreadsheetId, sheetName, entityId, data) {
+            try {
+                const headers = await this.getHeaders(spreadsheetId, sheetName);
+                if (headers.length === 0) {
+                    this.logger.warn(`No headers found in ${sheetName}; cannot update`);
+                    return;
+                }
+                const rows = await this.getAllRows(spreadsheetId, sheetName);
+                if (rows.length === 0)
+                    return;
+                // Assume first column is an ID field (e.g., "Student ID", "Employee ID", "Token")
+                const idColumn = headers[0];
+                const rowIndex = rows.findIndex((row) => row[0] === entityId);
+                if (rowIndex === -1) {
+                    // Row not found; append instead
+                    this.logger.warn(`Entity ${entityId} not found in ${sheetName}; appending new row`);
+                    return this.appendRow(spreadsheetId, sheetName, data);
+                }
+                // Build the updated row preserving column order
+                const updatedRow = headers.map((h) => String(data[h] ?? ''));
+                const sheetRow = rowIndex + 2; // +1 for header, +1 for 1-based index
+                await this.sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${sheetName}!A${sheetRow}`,
+                    valueInputOption: 'RAW',
+                    requestBody: { values: [updatedRow] },
+                });
+                this.logger.log(`Updated row ${sheetRow} in ${sheetName}`);
+            }
+            catch (error) {
+                this.logger.error(`Error updating row in ${sheetName}: ${error.message}`);
+                throw error;
+            }
+        }
+        /**
+         * Delete a row by clearing its content. Sheets API does not support
+         * row deletion directly via values, so we clear and shift if needed.
+         * We use the batchUpdate method to delete rows when possible.
+         */
+        async deleteRow(spreadsheetId, sheetName, entityId) {
+            try {
+                const headers = await this.getHeaders(spreadsheetId, sheetName);
+                if (headers.length === 0)
+                    return;
+                const rows = await this.getAllRows(spreadsheetId, sheetName);
+                const rowIndex = rows.findIndex((row) => row[0] === entityId);
+                if (rowIndex === -1) {
+                    this.logger.warn(`Entity ${entityId} not found in ${sheetName}; nothing to delete`);
+                    return;
+                }
+                // Clear the row content (keep structure intact)
+                const sheetRow = rowIndex + 2;
+                await this.sheets.spreadsheets.values.clear({
+                    spreadsheetId,
+                    range: `${sheetName}!A${sheetRow}:${String.fromCharCode(64 + headers.length)}${sheetRow}`,
+                });
+                this.logger.log(`Cleared row ${sheetRow} in ${sheetName} for deleted entity`);
+            }
+            catch (error) {
+                this.logger.error(`Error deleting row in ${sheetName}: ${error.message}`);
+                throw error;
+            }
+        }
+        /**
+         * Read the header row (first row) of a sheet.
+         */
+        async getHeaders(spreadsheetId, sheetName) {
+            try {
+                const response = await this.sheets.spreadsheets.values.get({
+                    spreadsheetId,
+                    range: `${sheetName}!1:1`,
+                });
+                return response.data.values?.[0] || [];
+            }
+            catch {
+                return [];
+            }
+        }
+        /**
+         * Read all data rows (excluding header) from a sheet.
+         */
+        async getAllRows(spreadsheetId, sheetName) {
+            try {
+                const response = await this.sheets.spreadsheets.values.get({
+                    spreadsheetId,
+                    range: `${sheetName}!A:Z`,
+                });
+                const values = response.data.values || [];
+                // Skip header row
+                return values.slice(1);
+            }
+            catch {
+                return [];
+            }
+        }
+    };
+    return GoogleSheetsService = _classThis;
+})();
+export { GoogleSheetsService };
+//# sourceMappingURL=google-sheets.service.js.map
