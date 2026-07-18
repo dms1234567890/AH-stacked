@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
+import { SyncService } from '../sync/sync.service';
 import type { AdmissionDto, SyncPreviewDto } from '@prime/types';
 import {
   normalizeStudentIdComparable,
@@ -12,7 +13,10 @@ import {
 export class AdmissionsService {
   private readonly logger = new Logger(AdmissionsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly syncService: SyncService,
+  ) {}
 
   async findAll() {
     const admissions = await this.prisma.admission.findMany({
@@ -212,6 +216,7 @@ export class AdmissionsService {
             where: { id: matchedStudent.id },
             data: { studentId: admission.studentId },
           });
+          await this.syncService.queueSync('students', matchedStudent.id, 'UPDATE');
           updated++;
         }
       }
@@ -244,6 +249,7 @@ export class AdmissionsService {
         where: { id: student.id },
         data: { deletedAt: new Date(), status: 'CANCELLED' },
       });
+      await this.syncService.queueSync('students', student.id, 'DELETE');
     }
 
     return { success: true, message: 'Admission and duplicate student entry deleted successfully.' };

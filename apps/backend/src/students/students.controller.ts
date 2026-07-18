@@ -77,6 +77,12 @@ export class StudentsController {
     return this.studentsService.getBatchHistory(studentId);
   }
 
+  @Get('student-id/:studentId')
+  @ApiOperation({ summary: 'Find student by student ID (e.g., 2602060001)' })
+  async findByStudentId(@Param('studentId') studentId: string) {
+    return this.studentsService.findByStudentId(studentId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get student by ID' })
   async findById(@Param('id') id: string) {
@@ -105,12 +111,6 @@ export class StudentsController {
   async cancel(@Param('id') id: string, @Req() req: Request) {
     const user = req.user as { id: string };
     return this.studentsService.cancel(id, 'Cancelled by admin', user.id);
-  }
-
-  @Get('student-id/:studentId')
-  @ApiOperation({ summary: 'Find student by student ID (e.g., 2602060001)' })
-  async findByStudentId(@Param('studentId') studentId: string) {
-    return this.studentsService.findByStudentId(studentId);
   }
 
   @Post('batch-change')

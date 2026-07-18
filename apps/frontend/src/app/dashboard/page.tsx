@@ -57,8 +57,7 @@ export default function DashboardPage() {
              className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             PERFORMANCE
           </a>
-          <a href="https://script.google.com/macros/s/AKfycbx7AVQNfzBWkeb90fOyrL5knQGNBSI2hBBkfzb6my_0pe-PH5IzSLBoigSFj1KbKT5jwQ/exec"
-             target="_blank" rel="noopener noreferrer"
+          <a href="/exams"
              className="bg-pink-500 hover:bg-pink-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             EXAM SECTION
           </a>

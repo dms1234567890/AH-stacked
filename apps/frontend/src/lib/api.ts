@@ -179,3 +179,11 @@ export const performanceApi = {
   getStudentReport: (studentId: string, params?: any) =>
     api.get(`/performance/report/${studentId}`, { params }),
 };
+
+// Exams endpoints
+export const examsApi = {
+  getAll: () => api.get('/exams'),
+  save: (data: any) => api.post('/exams', data),
+  delete: (id: string) => api.delete(`/exams/${id}`),
+  bootstrap: () => api.get('/exams/bootstrap'),
+};

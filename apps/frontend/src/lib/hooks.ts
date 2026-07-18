@@ -11,6 +11,7 @@ import {
   classesApi,
   headsApi,
   performanceApi,
+  examsApi,
 } from './api';
 
 // ================================================================
@@ -598,5 +599,41 @@ export function useStudentPerformanceReport(
     queryFn: () => performanceApi.getStudentReport(studentId, params).then(r => r.data),
     enabled: !!studentId,
     staleTime: 60_000,
+  });
+}
+
+// ================================================================
+// Exams Hooks
+// ================================================================
+
+export function useExamTypes() {
+  return useQuery({
+    queryKey: ['exams'],
+    queryFn: () => examsApi.getAll().then(r => r.data),
+    staleTime: 30_000,
+  });
+}
+
+export function useSaveExamType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => examsApi.save(data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['exams'] }); },
+  });
+}
+
+export function useDeleteExamType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => examsApi.delete(id).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['exams'] }); },
+  });
+}
+
+export function useBootstrapExams() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => examsApi.bootstrap().then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['exams'] }); },
   });
 }

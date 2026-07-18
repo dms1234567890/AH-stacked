@@ -12,6 +12,7 @@ const HW_POINTS: Record<string, number> = {
 };
 
 const SHEET_ATTENDANCE_ALIASES = [
+  "Student'sAttendenceData",
   'Student AttendanceData',
   'Student Attendance Data',
   'StudentAttendanceData',
@@ -156,14 +157,26 @@ export class PerformanceService {
 
   private async fetchAttendanceData(): Promise<any[][]> {
     const mainSheetId = process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID;
-    if (!mainSheetId) return [];
+    const hwSheetId = this.homeworkSpreadsheetId;
 
-    for (const alias of SHEET_ATTENDANCE_ALIASES) {
-      const values = await this.sheets.getSheetValues(mainSheetId, `${alias}!A:Z`);
-      if (values && values.length > 1) {
-        return values;
+    if (hwSheetId) {
+      for (const alias of SHEET_ATTENDANCE_ALIASES) {
+        const values = await this.sheets.getSheetValues(hwSheetId, `${alias}!A:Z`);
+        if (values && values.length > 1) {
+          return values;
+        }
       }
     }
+
+    if (mainSheetId) {
+      for (const alias of SHEET_ATTENDANCE_ALIASES) {
+        const values = await this.sheets.getSheetValues(mainSheetId, `${alias}!A:Z`);
+        if (values && values.length > 1) {
+          return values;
+        }
+      }
+    }
+
     return [];
   }
 

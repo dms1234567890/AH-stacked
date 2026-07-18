@@ -214,7 +214,14 @@ export class BatchesService {
     if (!countResult) throw new NotFoundException('Batch not found');
 
     const studentCount = (countResult as any)._count.students;
+    let affectedStudents: { id: string }[] = [];
+
     if (studentCount > 0) {
+      affectedStudents = await this.prisma.student.findMany({
+        where: { batchId: id, deletedAt: null },
+        select: { id: true },
+      });
+
       if (action === 'shift_students' && targetBatchId) {
         await this.prisma.student.updateMany({
           where: { batchId: id },
@@ -244,6 +251,15 @@ export class BatchesService {
     ]);
 
     await this.syncService.queueSync('batches', id, 'DELETE');
+
+    // Queue sync for affected students
+    for (const student of affectedStudents) {
+      await this.syncService.queueSync(
+        'students',
+        student.id,
+        action === 'delete_students' ? 'DELETE' : 'UPDATE',
+      );
+    }
 
     return {
       success: true,

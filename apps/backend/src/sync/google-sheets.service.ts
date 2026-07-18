@@ -7,7 +7,7 @@ import { google, sheets_v4 } from 'googleapis';
 const SHEET_MAP: Record<string, { spreadsheetId: string; sheetName: string }> = {
   students: {
     spreadsheetId: process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '',
-    sheetName: 'Students',
+    sheetName: 'students_database',
   },
   admissions: {
     spreadsheetId: process.env.GOOGLE_ADMISSIONS_SHEET_ID || '',
@@ -32,6 +32,10 @@ const SHEET_MAP: Record<string, { spreadsheetId: string; sheetName: string }> = 
   subjects: {
     spreadsheetId: process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '',
     sheetName: 'Subjects',
+  },
+  exam_types_custom: {
+    spreadsheetId: process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '',
+    sheetName: 'Exam_Types',
   },
 };
 
