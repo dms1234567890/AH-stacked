@@ -245,6 +245,26 @@ export class GoogleSheetsService {
   }
 
   /**
+   * Read all values for a given spreadsheet and range.
+   */
+  async getSheetValues(spreadsheetId: string, range: string): Promise<any[][]> {
+    if (!this.initialized) {
+      this.logger.warn('Sheets client not initialized. Cannot read sheet values.');
+      return [];
+    }
+    try {
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+      });
+      return response.data.values || [];
+    } catch (error: any) {
+      this.logger.error(`Error reading sheet values from ${spreadsheetId} for range ${range}: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
    * Read all data rows (excluding header) from a sheet.
    */
   private async getAllRows(

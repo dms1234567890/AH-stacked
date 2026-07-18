@@ -12,6 +12,8 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { ClassesModule } from './classes/classes.module';
 import { TasksModule } from './tasks/tasks.module';
 import { SyncModule } from './sync/sync.module';
+import { HeadsModule } from './heads/heads.module';
+import { PerformanceModule } from './performance/performance.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { SyncModule } from './sync/sync.module';
     ClassesModule,
     TasksModule,
     SyncModule,
+    HeadsModule,
+    PerformanceModule,
   ],
   providers: [
     {

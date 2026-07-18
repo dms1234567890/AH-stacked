@@ -41,13 +41,11 @@ export default function DashboardPage() {
 
         {/* Navigation Buttons */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-          <a href="https://script.google.com/macros/s/AKfycbyvqYtBFkA6DYv4qsxYmaI0zxA8EvDGfWRhLvdV3WSWFaD_ypxCWZFFylC5TO2Rx8s/exec"
-             target="_blank" rel="noopener noreferrer"
+          <a href="/classes"
              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             CLASSES MANAGE
           </a>
-          <a href="https://script.google.com/macros/s/AKfycbyYyvt2PjDQpfUI-0YF4UEEXVz58ZLRmkQSPUWJW9shgPZULVKDszI_bOfjOWTMHpw/exec"
-             target="_blank" rel="noopener noreferrer"
+          <a href="/heads"
              className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             HEADS MANAGE
           </a>
@@ -55,8 +53,7 @@ export default function DashboardPage() {
              className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             TASK MANAGE
           </a>
-          <a href="https://script.google.com/macros/s/AKfycbywNysudWSRe7yRsnK7-5Qd58EZOTk3fNCKnyNZq-43C-1TqyxisaIBe1Ic_Go1Ywbl/exec"
-             target="_blank" rel="noopener noreferrer"
+          <a href="/performance"
              className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             PERFORMANCE
           </a>

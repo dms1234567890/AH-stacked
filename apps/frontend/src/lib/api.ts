@@ -121,11 +121,25 @@ export const subjectsApi = {
 
 // Classes endpoints
 export const classesApi = {
-  getAll: (params?: any) => api.get('/classes', { params }),
-  getById: (id: string) => api.get(`/classes/${id}`),
-  create: (data: any) => api.post('/classes', data),
-  update: (id: string, data: any) => api.put(`/classes/${id}`, data),
-  delete: (id: string) => api.delete(`/classes/${id}`),
+  getBootstrap: () => api.get('/classes/bootstrap'),
+  getRecurring: (batchId?: string) => api.get('/classes/recurring', { params: { batchId } }),
+  saveRecurring: (data: any) => api.post('/classes/recurring', data),
+  getScheduleForDate: (date: string) => api.get(`/classes/schedule/${date}`),
+  getPartialOverrides: (date: string) => api.get(`/classes/partial/${date}`),
+  savePartialOverride: (data: any) => api.post('/classes/partial', data),
+  getWorkTimes: () => api.get('/classes/work-time'),
+  saveWorkTime: (data: any) => api.post('/classes/work-time', data),
+  deleteWorkTime: (teacherId: string) => api.delete(`/classes/work-time/${teacherId}`),
+  getAbsences: (params?: any) => api.get('/classes/absences', { params }),
+  saveAbsence: (data: any) => api.post('/classes/absences', data),
+  getMerged: (date: string) => api.get(`/classes/merged/${date}`),
+  saveMerged: (data: any) => api.post('/classes/merged', data),
+  deleteMerged: (id: string) => api.delete(`/classes/merged/${id}`),
+  getSunday: (date: string) => api.get(`/classes/sunday/${date}`),
+  saveSunday: (data: any) => api.post('/classes/sunday', data),
+  deleteSunday: (id: string) => api.delete(`/classes/sunday/${id}`),
+  getFreeTime: (params: any) => api.get('/classes/analytics/free-time', { params }),
+  getAvailable: (params: any) => api.get('/classes/analytics/available', { params }),
 };
 
 // Tasks endpoints
@@ -143,4 +157,25 @@ export const tasksApi = {
   // Task ratings
   rate: (taskId: string, data: { rating: number; notes?: string }) =>
     api.post(`/tasks/${taskId}/rate`, data),
+};
+
+// Heads and Syllabus endpoints
+export const headsApi = {
+  getBootstrap: () => api.get('/heads/bootstrap'),
+  saveSubjectHead: (data: any) => api.post('/heads/subject', data),
+  saveBatchHead: (data: any) => api.post('/heads/batch', data),
+  deleteSubjectHead: (id: string) => api.delete(`/heads/subject/${id}`),
+  deleteBatchHead: (id: string) => api.delete(`/heads/batch/${id}`),
+  getSyllabus: (params: any) => api.get('/heads/syllabus', { params }),
+  saveSyllabus: (data: any) => api.post('/heads/syllabus', data),
+  deleteSyllabus: (id: string) => api.delete(`/heads/syllabus/${id}`),
+  getSyllabusOverview: () => api.get('/heads/syllabus/overview'),
+  getSyllabusPdf: (params: any) => api.get('/heads/syllabus/pdf', { params }),
+};
+
+// Performance endpoints
+export const performanceApi = {
+  getLeaderboard: (params?: any) => api.get('/performance/leaderboard', { params }),
+  getStudentReport: (studentId: string, params?: any) =>
+    api.get(`/performance/report/${studentId}`, { params }),
 };

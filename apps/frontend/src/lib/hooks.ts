@@ -9,6 +9,8 @@ import {
   employeesApi,
   teachersApi,
   classesApi,
+  headsApi,
+  performanceApi,
 } from './api';
 
 // ================================================================
@@ -309,5 +311,292 @@ export function useDeleteDuplicate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
     },
+  });
+}
+
+// ================================================================
+// Classes / Schedule Hooks
+// ================================================================
+
+export function useClassesBootstrap() {
+  return useQuery({
+    queryKey: ['classes', 'bootstrap'],
+    queryFn: () => classesApi.getBootstrap().then((r) => r.data),
+    staleTime: 30_000,
+  });
+}
+
+export function useRecurringSchedule(batchId?: string) {
+  return useQuery({
+    queryKey: ['classes', 'recurring', batchId],
+    queryFn: () => classesApi.getRecurring(batchId).then((r) => r.data),
+    staleTime: 30_000,
+  });
+}
+
+export function useSaveRecurringSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => classesApi.saveRecurring(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useScheduleForDate(date: string) {
+  return useQuery({
+    queryKey: ['classes', 'schedule', date],
+    queryFn: () => classesApi.getScheduleForDate(date).then((r) => r.data),
+    enabled: !!date,
+    staleTime: 15_000,
+  });
+}
+
+export function usePartialOverrides(date: string) {
+  return useQuery({
+    queryKey: ['classes', 'partial', date],
+    queryFn: () => classesApi.getPartialOverrides(date).then((r) => r.data),
+    enabled: !!date,
+    staleTime: 15_000,
+  });
+}
+
+export function useSavePartialOverride() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => classesApi.savePartialOverride(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useTeacherWorkTimes() {
+  return useQuery({
+    queryKey: ['classes', 'work-times'],
+    queryFn: () => classesApi.getWorkTimes().then((r) => r.data),
+    staleTime: 60_000,
+  });
+}
+
+export function useSaveWorkTime() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => classesApi.saveWorkTime(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useDeleteWorkTime() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (teacherId: string) => classesApi.deleteWorkTime(teacherId).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useTeacherAbsences(params?: any) {
+  return useQuery({
+    queryKey: ['classes', 'absences', params],
+    queryFn: () => classesApi.getAbsences(params).then((r) => r.data),
+    staleTime: 30_000,
+  });
+}
+
+export function useSaveAbsence() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => classesApi.saveAbsence(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useMergedClasses(date: string) {
+  return useQuery({
+    queryKey: ['classes', 'merged', date],
+    queryFn: () => classesApi.getMerged(date).then((r) => r.data),
+    enabled: !!date,
+    staleTime: 15_000,
+  });
+}
+
+export function useSaveMergedClass() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => classesApi.saveMerged(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useDeleteMergedClass() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => classesApi.deleteMerged(id).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useSundayDuties(date: string) {
+  return useQuery({
+    queryKey: ['classes', 'sunday', date],
+    queryFn: () => classesApi.getSunday(date).then((r) => r.data),
+    enabled: !!date,
+    staleTime: 15_000,
+  });
+}
+
+export function useSaveSundayDuty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => classesApi.saveSunday(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useDeleteSundayDuty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => classesApi.deleteSunday(id).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+}
+
+export function useFreeTimeAnalytics(params: any) {
+  return useQuery({
+    queryKey: ['classes', 'free-time', params],
+    queryFn: () => classesApi.getFreeTime(params).then((r) => r.data),
+    enabled: !!params?.date,
+    staleTime: 15_000,
+  });
+}
+
+export function useAvailableTeachers(params: any) {
+  return useQuery({
+    queryKey: ['classes', 'available', params],
+    queryFn: () => classesApi.getAvailable(params).then((r) => r.data),
+    enabled: !!(params?.date && params?.timeSlot),
+    staleTime: 15_000,
+  });
+}
+
+// ================================================================
+// Heads Hooks
+// ================================================================
+
+export function useHeadsBootstrap() {
+  return useQuery({
+    queryKey: ['heads', 'bootstrap'],
+    queryFn: () => headsApi.getBootstrap().then(r => r.data),
+    staleTime: 30_000,
+  });
+}
+
+export function useSaveSubjectHead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => headsApi.saveSubjectHead(data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['heads'] }); },
+  });
+}
+
+export function useSaveBatchHead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => headsApi.saveBatchHead(data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['heads'] }); },
+  });
+}
+
+export function useDeleteSubjectHead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => headsApi.deleteSubjectHead(id).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['heads'] }); },
+  });
+}
+
+export function useDeleteBatchHead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => headsApi.deleteBatchHead(id).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['heads'] }); },
+  });
+}
+
+export function useSyllabusModules(params: any) {
+  return useQuery({
+    queryKey: ['heads', 'syllabus', params],
+    queryFn: () => headsApi.getSyllabus(params).then(r => r.data),
+    enabled: !!(params?.batchName && params?.subjectName),
+    staleTime: 15_000,
+  });
+}
+
+export function useSaveSyllabusModule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => headsApi.saveSyllabus(data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['heads'] }); },
+  });
+}
+
+export function useDeleteSyllabusModule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => headsApi.deleteSyllabus(id).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['heads'] }); },
+  });
+}
+
+export function useSyllabusOverview() {
+  return useQuery({
+    queryKey: ['heads', 'syllabus-overview'],
+    queryFn: () => headsApi.getSyllabusOverview().then(r => r.data),
+    staleTime: 30_000,
+  });
+}
+
+export function usePerformanceLeaderboard(params?: {
+  fromDate?: string;
+  toDate?: string;
+  languageMode?: string;
+  batchFilter?: string;
+}) {
+  return useQuery({
+    queryKey: ['performance', 'leaderboard', params],
+    queryFn: () => performanceApi.getLeaderboard(params).then(r => r.data),
+    staleTime: 60_000,
+  });
+}
+
+export function useStudentPerformanceReport(
+  studentId: string,
+  params?: {
+    fromDate?: string;
+    toDate?: string;
+    languageMode?: string;
+    batchFilter?: string;
+  },
+) {
+  return useQuery({
+    queryKey: ['performance', 'report', studentId, params],
+    queryFn: () => performanceApi.getStudentReport(studentId, params).then(r => r.data),
+    enabled: !!studentId,
+    staleTime: 60_000,
   });
 }

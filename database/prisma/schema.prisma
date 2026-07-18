@@ -84,6 +84,13 @@ model Teacher {
 
   // Relations
   classSchedules  ClassSchedule[]
+  recurringSchedules    RecurringSchedule[]
+  partialOriginal       PartialScheduleOverride[] @relation("OriginalTeacher")
+  partialReplacement    PartialScheduleOverride[] @relation("ReplacementTeacher")
+  teacherWorkTime       TeacherWorkTime?
+  absences              TeacherAbsence[]
+  mergedClasses         MergedClass[]
+  sundayDuties          SundayDuty[]
 
   @@map("teachers")
 }
@@ -128,6 +135,11 @@ model Batch {
   students        Student[]
   classSchedules  ClassSchedule[]
   batchChanges    BatchChangeLog[]
+  useDayWiseSchedule  Boolean  @default(false) @map("use_day_wise_schedule")
+  recurringSchedules  RecurringSchedule[]
+  partialOverrides    PartialScheduleOverride[]
+  originalMerges      MergedClass[] @relation("OriginalBatch")
+  mergedInto          MergedClass[] @relation("MergedBatch")
 
   @@map("batches")
 }
@@ -408,4 +420,169 @@ enum SyncStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+// ============================================================
+// NEW CLASSES MANAGEMENT MODELS
+// ============================================================
+
+model RecurringSchedule {
+  id            String   @id @default(uuid()) @db.Uuid
+  batchId       String   @map("batch_id") @db.Uuid
+  weekDay       String?  @map("week_day")  // Monday-Saturday or null for all days
+  timeSlot      String   @map("time_slot") // e.g. "10:00-11:00"
+  subject       String
+  dutyType      String?  @map("duty_type")
+  classRoom     String?  @map("class_room")
+  teacherId     String?  @map("teacher_id") @db.Uuid
+  teacherName   String?  @map("teacher_name")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  batch         Batch    @relation(fields: [batchId], references: [id])
+  teacher       Teacher? @relation(fields: [teacherId], references: [id])
+  @@index([batchId])
+  @@index([teacherId])
+  @@map("recurring_schedules")
+}
+
+model PartialScheduleOverride {
+  id                    String   @id @default(uuid()) @db.Uuid
+  date                  DateTime
+  batchId               String   @map("batch_id") @db.Uuid
+  timeSlot              String   @map("time_slot")
+  subject               String
+  dutyType              String?  @map("duty_type")
+  classRoom             String?  @map("class_room")
+  originalTeacherId     String?  @map("original_teacher_id") @db.Uuid
+  replacementTeacherId  String?  @map("replacement_teacher_id") @db.Uuid
+  reason                String?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  batch                 Batch    @relation(fields: [batchId], references: [id])
+  originalTeacher       Teacher? @relation("OriginalTeacher", fields: [originalTeacherId], references: [id])
+  replacementTeacher    Teacher? @relation("ReplacementTeacher", fields: [replacementTeacherId], references: [id])
+  @@index([date])
+  @@index([batchId])
+  @@map("partial_schedule_overrides")
+}
+
+model TeacherWorkTime {
+  id            String   @id @default(uuid()) @db.Uuid
+  teacherId     String   @unique @map("teacher_id") @db.Uuid
+  teacherName   String?  @map("teacher_name")
+  startTime     String   @map("start_time") // HH:mm
+  endTime       String   @map("end_time")   // HH:mm
+  startMinutes  Int      @map("start_minutes")
+  endMinutes    Int      @map("end_minutes")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  teacher       Teacher  @relation(fields: [teacherId], references: [id])
+  @@map("teacher_work_times")
+}
+
+model TeacherAbsence {
+  id            String   @id @default(uuid()) @db.Uuid
+  teacherId     String   @map("teacher_id") @db.Uuid
+  teacherName   String?  @map("teacher_name")
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  absenceType   String   @map("absence_type") // Full Day, Half Day, Late Entry, Specific Time Range
+  reason        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  teacher       Teacher  @relation(fields: [teacherId], references: [id])
+  @@index([teacherId])
+  @@index([startDate, endDate])
+  @@map("teacher_absences")
+}
+
+model MergedClass {
+  id              String   @id @default(uuid()) @db.Uuid
+  date            DateTime
+  originalBatchId String   @map("original_batch_id") @db.Uuid
+  mergedBatchId   String   @map("merged_batch_id") @db.Uuid
+  timeSlot        String   @map("time_slot")
+  subject         String
+  dutyType        String?  @map("duty_type")
+  classRoom       String?  @map("class_room")
+  teacherId       String?  @map("teacher_id") @db.Uuid
+  teacherName     String?  @map("teacher_name")
+  reason          String?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  originalBatch   Batch    @relation("OriginalBatch", fields: [originalBatchId], references: [id])
+  mergedBatch     Batch    @relation("MergedBatch", fields: [mergedBatchId], references: [id])
+  teacher         Teacher? @relation(fields: [teacherId], references: [id])
+  @@index([date])
+  @@map("merged_classes")
+}
+
+model SundayDuty {
+  id            String   @id @default(uuid()) @db.Uuid
+  date          DateTime
+  roomNumber    String   @map("room_number")
+  startTime     String   @map("start_time")
+  endTime       String   @map("end_time")
+  teacherId     String?  @map("teacher_id") @db.Uuid
+  teacherName   String?  @map("teacher_name")
+  remarks       String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  teacher       Teacher? @relation(fields: [teacherId], references: [id])
+  @@index([date])
+  @@map("sunday_duties")
+}
+
+// ============================================================
+// HEADS & SYLLABUS MANAGEMENT
+// ============================================================
+
+model HeadAssignment {
+  id             String   @id @default(uuid()) @db.Uuid
+  assignmentType String   @map("assignment_type") // "Batch" or "Subject"
+  targetName     String   @map("target_name")     // e.g. "TPC-01(2026)" or "ENGLISH"
+  headName       String   @map("head_name")
+  headEmployeeId String   @map("head_employee_id")
+  assignedDate   DateTime @default(now()) @map("assigned_date")
+  assignedBy     String?  @map("assigned_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([assignmentType])
+  @@index([targetName])
+  @@map("head_assignments")
+}
+
+model SyllabusModule {
+  id                String   @id @default(uuid()) @db.Uuid
+  subjectName       String   @map("subject_name")
+  batchName         String   @map("batch_name")
+  moduleNumber      String   @map("module_number") // e.g. "M001"
+  moduleTitle       String   @map("module_title")  // e.g. "MODULE 1"
+  chapterName       String   @map("chapter_name")
+  moduleDescription String?  @map("module_description")
+  dueDate           String?  @map("due_date")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([subjectName, batchName])
+  @@map("syllabus_modules")
+}
+
+model ModuleProgress {
+  id                 String   @id @default(uuid()) @db.Uuid
+  recordId           String   @unique @map("record_id")
+  timestamp          DateTime @default(now())
+  teacherName        String   @map("teacher_name")
+  teacherEmployeeId  String   @map("teacher_employee_id")
+  batchName          String   @map("batch_name")
+  subjectName        String   @map("subject_name")
+  moduleNumber       String   @map("module_number")
+  moduleTitle        String   @map("module_title")
+  status             String   @default("Pending")
+  reason             String?
+  submittedAt        DateTime @default(now()) @map("submitted_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@map("module_progress")
 }
