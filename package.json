@@ -11,6 +11,9 @@
   "scripts": {
     "dev": "npx turbo run dev --continue",
     "build": "npx turbo run build --continue",
+    "start": "node apps/backend/dist/main.js",
+    "start:backend": "node apps/backend/dist/main.js",
+    "start:frontend": "cd apps/frontend && npm run start",
     "lint": "npx turbo run lint --continue",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "cd database && npx prisma generate",
