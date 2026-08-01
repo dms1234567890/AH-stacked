@@ -9,8 +9,9 @@
     "database"
   ],
   "scripts": {
+    "postinstall": "npx prisma generate --schema=database/prisma/schema.prisma",
     "dev": "npx turbo run dev --continue",
-    "build": "npx turbo run build --continue",
+    "build": "npx prisma generate --schema=database/prisma/schema.prisma && npx turbo run build --continue",
     "start": "node apps/backend/dist/main.js",
     "start:backend": "node apps/backend/dist/main.js",
     "start:frontend": "cd apps/frontend && npm run start",
