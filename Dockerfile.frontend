@@ -12,6 +12,7 @@ COPY package*.json turbo.json ./
 COPY apps/frontend/package*.json ./apps/frontend/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/types/package*.json ./packages/types/
+COPY database/prisma ./database/prisma/
 
 # Install dependencies
 RUN npm ci
