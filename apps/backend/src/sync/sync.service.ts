@@ -45,30 +45,35 @@ export class SyncService {
    * through BullMQ. This replaces the old synchronous DB-polling approach.
    */
   async processPendingSyncs(): Promise<{ reQueued: number; message: string }> {
-    const pendingLogs = await this.prisma.syncLog.findMany({
-      where: { status: { in: ['PENDING', 'FAILED'] } },
-      take: 50,
-      orderBy: { createdAt: 'asc' },
-    });
-
-    if (pendingLogs.length === 0) {
-      return { reQueued: 0, message: 'No pending sync jobs found' };
-    }
-
-    for (const log of pendingLogs) {
-      await this.syncQueue.enqueue({
-        syncLogId: log.id,
-        entityType: log.entityType,
-        entityId: log.entityId,
-        action: log.action as 'INSERT' | 'UPDATE' | 'DELETE',
+    try {
+      const pendingLogs = await this.prisma.syncLog.findMany({
+        where: { status: { in: ['PENDING', 'FAILED'] } },
+        take: 50,
+        orderBy: { createdAt: 'asc' },
       });
-    }
 
-    this.logger.log(`Re-queued ${pendingLogs.length} pending sync jobs`);
-    return {
-      reQueued: pendingLogs.length,
-      message: `Re-queued ${pendingLogs.length} pending sync jobs to BullMQ for processing`,
-    };
+      if (pendingLogs.length === 0) {
+        return { reQueued: 0, message: 'No pending sync jobs found' };
+      }
+
+      for (const log of pendingLogs) {
+        await this.syncQueue.enqueue({
+          syncLogId: log.id,
+          entityType: log.entityType,
+          entityId: log.entityId,
+          action: log.action as 'INSERT' | 'UPDATE' | 'DELETE',
+        });
+      }
+
+      this.logger.log(`Re-queued ${pendingLogs.length} pending sync jobs`);
+      return {
+        reQueued: pendingLogs.length,
+        message: `Re-queued ${pendingLogs.length} pending sync jobs to BullMQ for processing`,
+      };
+    } catch (err: any) {
+      this.logger.warn(`processPendingSyncs skipped: Database offline or query failed (${err.message})`);
+      return { reQueued: 0, message: `Database offline: ${err.message}` };
+    }
   }
 
   /**
