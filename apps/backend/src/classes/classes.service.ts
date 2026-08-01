@@ -291,7 +291,7 @@ export class ClassesService {
       let totalSlots = 6;
       const wt = workTimeMap.get(teacher.id);
       if (wt) {
-        const totalMinutes = wt.endMinutes - wt.startMinutes;
+        const totalMinutes = (wt as any).endMinutes - (wt as any).startMinutes;
         // Assume each slot is 60 minutes
         totalSlots = Math.max(1, Math.round(totalMinutes / 60));
       }
@@ -304,7 +304,7 @@ export class ClassesService {
           busySlots: 0,
           totalSlots,
           onLeave: true,
-          leaveReason: absenceMap.get(teacher.id)?.reason || 'Absent',
+          leaveReason: (absenceMap.get(teacher.id) as any)?.reason || 'Absent',
         };
       }
 
