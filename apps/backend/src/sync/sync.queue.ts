@@ -28,11 +28,18 @@ export class SyncQueue {
   }
 
   private async initializeQueue() {
+    const redisHost = process.env.REDIS_HOST;
+    if (redisHost === 'none' || process.env.ENABLE_REDIS === 'false') {
+      this.logger.log('Redis disabled (REDIS_HOST=none or ENABLE_REDIS=false). Queue running in direct mode.');
+      return;
+    }
+
     const connection = {
-      host: process.env.REDIS_HOST || 'localhost',
+      host: redisHost || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       password: process.env.REDIS_PASSWORD || undefined,
       maxRetriesPerRequest: null,
+      enableOfflineQueue: false,
       retryStrategy: () => null,
     };
 
