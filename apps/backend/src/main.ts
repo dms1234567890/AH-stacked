@@ -27,8 +27,21 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // CORS
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'https://prime-frontend-ao0q.onrender.com',
+  ].filter(Boolean) as string[];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all in production for now
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
