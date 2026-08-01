@@ -29,7 +29,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       },
     });
 
-    if (!user || !user.isActive) {
+    // Academic sessions created by the legacy Login sheet or the former local
+    // default account must not survive the switch to Departments-based auth.
+    if (!user || !user.isActive || user.post !== 'ACADEMIC') {
       throw new UnauthorizedException('User not found or deactivated');
     }
 

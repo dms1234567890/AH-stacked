@@ -534,6 +534,85 @@ model SundayDuty {
 }
 
 // ============================================================
+// GRIEVANCE DEPARTMENT
+// ============================================================
+
+model GrievanceComplaint {
+  id                  String   @id @default(uuid()) @db.Uuid
+  complaintId         String   @unique @map("complaint_id")
+  studentId           String?  @map("student_id")
+  studentName         String?  @map("student_name")
+  fatherName          String?  @map("father_name")
+  motherName          String?  @map("mother_name")
+  parentEmail         String?  @map("parent_email")
+  complainantName     String?  @map("complainant_name")
+  complainantRelation String?  @map("complainant_relation")
+  complainantMobile   String?  @map("complainant_mobile")
+  department          String?  @default("GRIEVANCE")
+  complaintText       String?  @map("complaint_text")
+  complaintType       String?  @map("complaint_type")
+  priority            String   @default("NORMAL")
+  status              String   @default("PENDING")
+  assignedTo          String?  @map("assigned_to")
+  hodResponse         String?  @map("hod_response")
+  employeeResponse    String?  @map("employee_response")
+  createdDate         DateTime? @map("created_date")
+  lastUpdated         DateTime? @map("last_updated")
+  resolutionDate      DateTime? @map("resolution_date")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  // Relations
+  callRecords         GrievanceCallRecord[]
+
+  @@index([complaintId])
+  @@index([studentId])
+  @@index([department])
+  @@index([status])
+  @@index([priority])
+  @@map("grievance_complaints")
+}
+
+model GrievanceCallRecord {
+  id                    String   @id @default(uuid()) @db.Uuid
+  callId                String   @unique @map("call_id")
+  complaintId           String   @map("complaint_id") @db.Uuid
+  studentId             String?  @map("student_id")
+  studentName           String?  @map("student_name")
+  fatherName            String?  @map("father_name")
+  motherName            String?  @map("mother_name")
+  mobileNumber          String?  @map("mobile_number")
+  complainantName       String?  @map("complainant_name")
+  complainantRelation   String?  @map("complainant_relation")
+  complainantMobile     String?  @map("complainant_mobile")
+  department            String?  @default("GRIEVANCE")
+  complaintType         String?  @map("complaint_type")
+  priority              String   @default("NORMAL")
+  complaintStatus       String   @default("PENDING")
+  callDate              String?  @map("call_date")
+  callStatus            String?  @map("call_status")
+  callOutcome           String?  @map("call_outcome")
+  dropMessageContent    String?  @map("drop_message_content")
+  remarks               String?  @map("remarks")
+  callbackScheduledDate String?  @map("callback_scheduled_date")
+
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  // Relations
+  complaint             GrievanceComplaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@index([complaintId])
+  @@index([callDate])
+  @@index([callStatus])
+  @@index([callbackScheduledDate])
+  @@map("grievance_call_records")
+}
+
+// ============================================================
 // HEADS & SYLLABUS MANAGEMENT
 // ============================================================
 
@@ -597,3 +676,4 @@ model ExamType {
 
   @@map("exam_types")
 }
+

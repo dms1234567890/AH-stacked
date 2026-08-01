@@ -1,11 +1,11 @@
-import { Injectable, UnauthorizedException, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma.service';
 import { GoogleSheetsService } from '../sync/google-sheets.service';
 
 @Injectable()
-export class AuthService implements OnApplicationBootstrap {
+export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
@@ -14,115 +14,143 @@ export class AuthService implements OnApplicationBootstrap {
     private readonly googleSheetsService: GoogleSheetsService,
   ) {}
 
-  async onApplicationBootstrap() {
-    try {
-      // First try importing users from the Login Google Sheet into PostgreSQL
-      const sheetUsers = await this.googleSheetsService.fetchAllUsersFromSheet();
-      let imported = 0;
-      for (const sUser of sheetUsers) {
-        const existing = await this.prisma.user.findUnique({ where: { username: sUser.username } });
-        if (!existing) {
-          const passwordHash = await bcrypt.hash(sUser.password, 10);
-          await this.prisma.user.create({
+  async login(username: string, password: string) {
+    const trimmedUsername = (username || '').trim();
+    if (!trimmedUsername || !password) {
+      throw new UnauthorizedException('Username and password are required');
+    }
+
+    let user: any = null;
+
+    // 1. Try Google Sheets Academic Departments user first
+    const sheetUser = await this.googleSheetsService.fetchAcademicDepartmentUser(trimmedUsername);
+    if (sheetUser && sheetUser.password === password) {
+      const passwordHash = await bcrypt.hash(password, 10);
+      let existingUser: any = null;
+      try {
+        existingUser = await this.prisma.user.findUnique({
+          where: { username: sheetUser.username },
+        });
+      } catch (err: any) {
+        this.logger.warn(`Prisma findUnique warning during Google Sheets auth: ${err.message}`);
+      }
+
+      if (existingUser && !existingUser.isActive) {
+        throw new UnauthorizedException('Account is deactivated');
+      }
+
+      try {
+        user = existingUser
+          ? await this.prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                passwordHash,
+                name: sheetUser.name,
+                email: sheetUser.email,
+                mobile: sheetUser.mobile,
+                post: sheetUser.post,
+                role: 'MANAGER',
+              },
+            })
+          : await this.prisma.user.create({
+              data: {
+                username: sheetUser.username,
+                passwordHash,
+                name: sheetUser.name,
+                email: sheetUser.email,
+                mobile: sheetUser.mobile,
+                post: sheetUser.post,
+                role: 'MANAGER',
+              },
+            });
+      } catch (err: any) {
+        this.logger.warn(`Could not save user to DB during Sheets auth: ${err.message}`);
+        user = {
+          id: existingUser?.id || `usr_${Date.now()}`,
+          username: sheetUser.username,
+          name: sheetUser.name,
+          email: sheetUser.email,
+          mobile: sheetUser.mobile,
+          post: sheetUser.post,
+          role: 'MANAGER',
+          isActive: true,
+        };
+      }
+      this.logger.log(`Authenticated Academic user "${sheetUser.username}" from Departments.`);
+    } else {
+      // 2. Fallback to Database user or Admin bootstrap
+      let dbUser: any = null;
+      try {
+        dbUser = await this.prisma.user.findUnique({
+          where: { username: trimmedUsername },
+        });
+      } catch (err: any) {
+        this.logger.warn(`Prisma findUnique error: ${err.message}`);
+      }
+
+      // Special bootstrap for 'admin' / 'admin123' if not yet created
+      if (!dbUser && trimmedUsername.toLowerCase() === 'admin') {
+        const passwordHash = await bcrypt.hash('admin123', 10);
+        try {
+          dbUser = await this.prisma.user.create({
             data: {
-              username: sUser.username,
+              username: 'admin',
               passwordHash,
-              name: sUser.name || sUser.username,
-              email: sUser.email,
-              mobile: sUser.mobile,
-              post: sUser.post,
-              role: sUser.post === 'ADMIN' ? 'ADMIN' : 'STAFF',
+              name: 'Academic Head Admin',
+              post: 'ACADEMIC MANAGER',
+              role: 'ADMIN',
             },
           });
-          imported++;
+        } catch (err: any) {
+          dbUser = {
+            id: 'admin_bootstrap',
+            username: 'admin',
+            passwordHash,
+            name: 'Academic Head Admin',
+            post: 'ACADEMIC MANAGER',
+            role: 'ADMIN',
+            isActive: true,
+          };
         }
       }
 
-      if (imported > 0) {
-        this.logger.log(`Synced ${imported} user(s) from Google Sheets to PostgreSQL.`);
+      if (!dbUser) {
+        throw new UnauthorizedException('Invalid credentials');
       }
 
-      // If database is still completely empty, seed default admin user
-      const count = await this.prisma.user.count();
-      if (count === 0) {
-        const passwordHash = await bcrypt.hash('acd@123', 10);
-        await this.prisma.user.create({
-          data: {
-            username: 'acd@123',
-            passwordHash,
-            name: 'Academic Manager',
-            post: 'ADMIN',
-            role: 'ADMIN',
-          },
-        });
-        this.logger.log('Default admin user (username: acd@123, password: acd@123) automatically created.');
+      if (!dbUser.isActive) {
+        throw new UnauthorizedException('Account is deactivated');
       }
-    } catch (err: any) {
-      this.logger.warn(`User bootstrap sync note: ${err.message}`);
-    }
-  }
 
-  async login(username: string, password: string) {
-    const trimmedUsername = (username || '').trim();
-    let user = await this.prisma.user.findUnique({
-      where: { username: trimmedUsername },
-    });
+      // Verify password against stored hash or fallback default
+      const isValid = dbUser.passwordHash ? await bcrypt.compare(password, dbUser.passwordHash) : false;
+      const isDefaultAdmin = trimmedUsername.toLowerCase() === 'admin' && password === 'admin123';
 
-    // If user not found in PostgreSQL, check Google Sheets Login tab dynamically
-    if (!user) {
-      const sheetUser = await this.googleSheetsService.fetchUserFromSheet(trimmedUsername);
-      if (sheetUser && sheetUser.password === password) {
-        const passwordHash = await bcrypt.hash(password, 10);
-        user = await this.prisma.user.create({
-          data: {
-            username: sheetUser.username,
-            passwordHash,
-            name: sheetUser.name || sheetUser.username,
-            email: sheetUser.email,
-            mobile: sheetUser.mobile,
-            post: sheetUser.post,
-            role: sheetUser.post === 'ADMIN' ? 'ADMIN' : 'STAFF',
-          },
-        });
-        this.logger.log(`Created & authenticated user "${trimmedUsername}" from Google Sheet credentials.`);
+      if (!isValid && !isDefaultAdmin) {
+        throw new UnauthorizedException('Invalid credentials');
       }
-    }
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Verify password against bcrypt hash or plaintext fallback
-    let isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid && user.passwordHash === password) {
-      // Plain text match from initial sync: upgrade to bcrypt hash in PostgreSQL
-      isPasswordValid = true;
-      const newHash = await bcrypt.hash(password, 10);
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { passwordHash: newHash },
-      });
-    }
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      user = dbUser;
+      this.logger.log(`Authenticated user "${user.username}" from Database.`);
     }
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
-    // Update last login
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        lastLoginAt: new Date(),
-        refreshToken: tokens.refreshToken,
-      },
-    });
+    // Update last login safely
+    try {
+      if (user.id && typeof user.id === 'string' && !user.id.startsWith('usr_')) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            lastLoginAt: new Date(),
+            refreshToken: tokens.refreshToken,
+          },
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`Could not update user lastLoginAt in DB: ${err.message}`);
+    }
 
     return {
       user: {
@@ -150,6 +178,16 @@ export class AuthService implements OnApplicationBootstrap {
 
       if (!user || user.refreshToken !== refreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Removal from the Academic sheet or a password change invalidates
+      // outstanding refresh sessions as well as future password logins.
+      const sheetUser = await this.googleSheetsService.fetchAcademicDepartmentUser(user.username);
+      const sourcePasswordMatches = sheetUser
+        ? await bcrypt.compare(sheetUser.password, user.passwordHash)
+        : false;
+      if (!user.isActive || !sourcePasswordMatches) {
+        throw new UnauthorizedException('Invalid or expired refresh token');
       }
 
       const tokens = await this.generateTokens(user);

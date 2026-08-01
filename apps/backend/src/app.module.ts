@@ -15,6 +15,11 @@ import { SyncModule } from './sync/sync.module';
 import { HeadsModule } from './heads/heads.module';
 import { PerformanceModule } from './performance/performance.module';
 import { ExamsModule } from './exams/exams.module';
+import { GrievanceModule } from './grievance/grievance.module';
+import { DailyAlertsModule } from './daily-alerts/daily-alerts.module';
+import { CallingModule } from './calling/calling.module';
+import { JobsModule } from './jobs/jobs.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -38,6 +43,11 @@ import { ExamsModule } from './exams/exams.module';
     HeadsModule,
     PerformanceModule,
     ExamsModule,
+    GrievanceModule,
+    DailyAlertsModule,
+    CallingModule,
+    JobsModule,
+    NotificationsModule,
   ],
   providers: [
     {

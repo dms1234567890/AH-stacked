@@ -1,5 +1,8 @@
-# Database - Supabase PostgreSQL
-DATABASE_URL="postgresql://postgres:Happy%4026005TPC@db.eekxnosfptejywsncowa.supabase.co:5432/postgres?sslmode=require"
+# Database - Supabase PostgreSQL (IPv4 Pooler in eu-central-1 region)
+DATABASE_URL="postgresql://postgres.eekxnosfptejywsncowa:Happy%4026005TPC@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true"
+FALLBACK_DATABASE_URL="postgresql://prime:change-this-local-password@127.0.0.1:5433/prime_academic_manager?schema=public"
+DATABASE_CONNECT_RETRIES=3
+DATABASE_CONNECT_RETRY_DELAY_MS=1000
 
 # JWT
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
@@ -18,6 +21,7 @@ GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAAS
 GOOGLE_LOGIN_SHEET_ID="1_vUAFShQrvHRlJALfcnBCCZEZF7zHYGuulYV-kPifTI"
 GOOGLE_CLASSES_STUDENTS_SHEET_ID="1DK4OpEdEDh2z_Ng9vIHbci41yBLSQ2m4ZXI7sqA7mJs"
 GOOGLE_ADMISSIONS_SHEET_ID="1StEreMtS9_mbt4Np-T0J4WK5ILwDqyxmtqwxw8ZebOA"
+GOOGLE_DEPARTMENTS_SHEET_ID="1AxdiOpaij8Lnx0TV5iMhgVlADfN0LeXzwOdmbzmrlGA"
 
 # Cloudinary
 CLOUDINARY_CLOUD_NAME="qbf24rg0"

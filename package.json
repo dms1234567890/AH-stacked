@@ -20,6 +20,7 @@
     "db:check": "node --env-file=.env scripts/check-database.js",
     "db:local:up": "docker compose up -d postgres",
     "db:local:down": "docker compose down",
+    "backend:local:dev": "node scripts/start-local-backend.js",
     "frontend:dev": "cd apps/frontend && npm run dev",
     "backend:dev": "cd apps/backend && npm run start:dev"
   },

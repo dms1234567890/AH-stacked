@@ -180,6 +180,30 @@ export const performanceApi = {
     api.get(`/performance/report/${studentId}`, { params }),
 };
 
+// Daily academic follow-up alerts
+export const dailyAlertsApi = {
+  get: (date: string) => api.get('/daily-alerts', { params: { date } }),
+};
+
+// Grievance Department endpoints
+export const grievanceApi = {
+  getDashboard: () => api.get('/grievance/dashboard'),
+
+  getComplaints: () => api.get('/grievance/complaints'),
+  getComplaint: (complaintId: string) => api.get(`/grievance/complaints/${complaintId}`),
+  searchComplaints: (q: string) => api.get('/grievance/complaints/search', { params: { q } }),
+  createComplaint: (data: any) => api.post('/grievance/complaints', data),
+  updateComplaint: (complaintId: string, data: any) => api.put(`/grievance/complaints/${complaintId}`, data),
+  deleteComplaint: (complaintId: string) => api.delete(`/grievance/complaints/${complaintId}`),
+
+  getPendingCalls: () => api.get('/grievance/pending-calls'),
+  getCallLogs: (limit?: number) => api.get('/grievance/call-logs', { params: { limit } }),
+  getCallbacks: () => api.get('/grievance/callbacks'),
+  getCallSummary: () => api.get('/grievance/call-summary'),
+  logCall: (data: any) => api.post('/grievance/calls', data),
+  getCallRecords: (complaintId: string) => api.get(`/grievance/calls/${complaintId}`),
+};
+
 // Exams endpoints
 export const examsApi = {
   getAll: () => api.get('/exams'),
@@ -187,3 +211,14 @@ export const examsApi = {
   delete: (id: string) => api.delete(`/exams/${id}`),
   bootstrap: () => api.get('/exams/bootstrap'),
 };
+
+// Calling / Telecaller endpoints
+export const callingApi = {
+  getDashboard: (params?: { date?: string; batch?: string; taskType?: string }) =>
+    api.get('/calling/dashboard', { params }),
+  createTask: (data: any) => api.post('/calling/task/create', data),
+  updateStatus: (data: any) => api.post('/calling/status/update', data),
+  sendDropMessage: (data: any) => api.post('/calling/drop-message', data),
+  markCompleted: (data: any) => api.post('/calling/complete', data),
+};
+

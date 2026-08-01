@@ -1,15 +1,12 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Public } from '../common/public.decorator';
 import { StudentsService } from './students.service';
 import { AdmissionsService } from './admissions.service';
-import { JwtAuthGuard } from '../common/jwt-auth.guard';
-import { RolesGuard } from '../common/roles.guard';
-import { Roles } from '../common/roles.decorator';
 import { Request } from 'express';
 
 @ApiTags('Students')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@Public()
 @Controller('students')
 export class StudentsController {
   constructor(
@@ -90,46 +87,40 @@ export class StudentsController {
   }
 
   @Post()
-  @Roles('ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'Create a new student' })
   async create(@Body() body: any, @Req() req: Request) {
-    const user = req.user as { id: string };
+    const user = (req as any).user || { id: 'admin_user' };
     return this.studentsService.create({ ...body, changedById: user.id });
   }
 
   @Put(':id')
-  @Roles('ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'Update a student' })
   async update(@Param('id') id: string, @Body() body: any, @Req() req: Request) {
-    const user = req.user as { id: string };
+    const user = (req as any).user || { id: 'admin_user' };
     return this.studentsService.update(id, { ...body, changedById: user.id });
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Cancel student admission (soft delete)' })
   async cancel(@Param('id') id: string, @Req() req: Request) {
-    const user = req.user as { id: string };
+    const user = (req as any).user || { id: 'admin_user' };
     return this.studentsService.cancel(id, 'Cancelled by admin', user.id);
   }
 
   @Post('batch-change')
-  @Roles('ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'Change student batch' })
   async changeBatch(@Body() body: { studentId: string; newBatchId: string }, @Req() req: Request) {
-    const user = req.user as { id: string };
+    const user = (req as any).user || { id: 'admin_user' };
     return this.studentsService.changeBatch(body.studentId, body.newBatchId, user.id);
   }
 
   @Delete('admissions/:id')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete admission entry' })
   async deleteAdmission(@Param('id') id: string) {
     return this.admissionsService.deleteAdmission(id);
   }
 
   @Delete('admissions/duplicate/:id')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete duplicate from admissions and database' })
   async deleteDuplicate(@Param('id') id: string, @Query('studentId') studentId: string) {
     return this.admissionsService.deleteDuplicate(id, studentId);

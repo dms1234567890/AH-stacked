@@ -6,33 +6,44 @@ export class HeadsService {
   constructor(private prisma: PrismaService) {}
 
   async getBootstrapData() {
-    const [employees, batches, subjects, subjectHeads, batchHeads, syllabusOverview] = await Promise.all([
-      this.prisma.employee.findMany({
-        where: { isActive: true },
-        select: {
-          id: true,
-          name: true,
-          employeeId: true,
-          department: true,
-          designation: true,
-        },
-      }),
-      this.prisma.batch.findMany({
-        where: { isActive: true },
-        orderBy: { name: 'asc' },
-      }),
-      this.prisma.subject.findMany({
-        where: { isActive: true },
-        orderBy: { name: 'asc' },
-      }),
-      this.prisma.headAssignment.findMany({
-        where: { assignmentType: 'Subject' },
-      }),
-      this.prisma.headAssignment.findMany({
-        where: { assignmentType: 'Batch' },
-      }),
-      this.getSyllabusOverview(),
-    ]);
+    let employees: any[] = [];
+    let batches: any[] = [];
+    let subjects: any[] = [];
+    let subjectHeads: any[] = [];
+    let batchHeads: any[] = [];
+    let syllabusOverview: any[] = [];
+
+    try {
+      [employees, batches, subjects, subjectHeads, batchHeads, syllabusOverview] = await Promise.all([
+        this.prisma.employee.findMany({
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            employeeId: true,
+            department: true,
+            designation: true,
+          },
+        }).catch(() => []),
+        this.prisma.batch.findMany({
+          where: { isActive: true },
+          orderBy: { name: 'asc' },
+        }).catch(() => []),
+        this.prisma.subject.findMany({
+          where: { isActive: true },
+          orderBy: { name: 'asc' },
+        }).catch(() => []),
+        this.prisma.headAssignment.findMany({
+          where: { assignmentType: 'Subject' },
+        }).catch(() => []),
+        this.prisma.headAssignment.findMany({
+          where: { assignmentType: 'Batch' },
+        }).catch(() => []),
+        this.getSyllabusOverview().catch(() => []),
+      ]);
+    } catch (err) {
+      // Fallback empty results when DB is disconnected
+    }
 
     return {
       employees,
@@ -184,10 +195,19 @@ export class HeadsService {
   }
 
   async getSyllabusOverview() {
-    const modules = await this.prisma.syllabusModule.findMany();
-    const progressRecords = await this.prisma.moduleProgress.findMany({
-      where: { status: 'Completed' },
-    });
+    let modules: any[] = [];
+    let progressRecords: any[] = [];
+
+    try {
+      [modules, progressRecords] = await Promise.all([
+        this.prisma.syllabusModule.findMany().catch(() => []),
+        this.prisma.moduleProgress.findMany({
+          where: { status: 'Completed' },
+        }).catch(() => []),
+      ]);
+    } catch (err) {
+      return [];
+    }
 
     const completedSet = new Set(
       progressRecords.map(p => `${p.batchName}-${p.subjectName}-${p.moduleNumber}`)

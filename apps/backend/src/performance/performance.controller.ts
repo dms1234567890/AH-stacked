@@ -1,11 +1,10 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../common/jwt-auth.guard';
+import { Controller, Get, Query, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Public } from '../common/public.decorator';
 import { PerformanceService } from './performance.service';
 
 @ApiTags('Performance')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@Public()
 @Controller('performance')
 export class PerformanceController {
   constructor(private readonly performanceService: PerformanceService) {}

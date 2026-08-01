@@ -65,22 +65,19 @@ export default function DashboardPage() {
              className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             STUDENTS MANAGE
           </a>
+          <a href="/grievance"
+             className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
+            GRIEVANCE DEPARTMENT
+          </a>
           <button onClick={() => openExternal('https://classplusapp.com/diy/login')}
              className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg shadow">
             CLASSPLUS LOGIN
           </button>
-          <a href="https://script.google.com/macros/s/AKfycbwccBgWzNkrYOs5XQVM7PBN2umTVNUZk9ZMA8x9DJbVmNOZaNI7q46eczSEbnOTZbdd/exec"
-             target="_blank" rel="noopener noreferrer"
-             className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
-            FOR GRIEVANCE DEPARTMENT
-          </a>
-          <a href="https://script.google.com/macros/s/AKfycbz1lCEVseoDkLizFlOHR3U5YOjfTyro8-TdBjnbTn4YKlVKCpEC8dlXIAvkzpaXR_Yu/exec"
-             target="_blank" rel="noopener noreferrer"
+          <a href="/job-requirement"
              className="bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 px-4 rounded-lg shadow text-center">
             JOB REQUIREMENT
           </a>
-          <a href="https://script.google.com/macros/s/AKfycbxMWgrK3NBYdSyc_9oQ1PwHZ94os5vdozZZRQ-XXfAC4YFVTg2Rnhso-uv3fupwEsbA/exec"
-             target="_blank" rel="noopener noreferrer"
+          <a href="/daily-alerts"
              className="bg-black text-white font-semibold py-3 px-4 rounded-lg border border-neutral-800 shadow-lg hover:bg-neutral-900 text-center">
             DAILY ALERTS
           </a>

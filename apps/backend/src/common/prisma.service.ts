@@ -20,16 +20,29 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         await this.$connect();
-        this.logger.log('Connected to PostgreSQL database');
+        this.logger.log('Successfully connected to PostgreSQL database (Supabase Cloud)');
         return;
-      } catch (error) {
+      } catch (error: any) {
+        this.logger.warn(`PostgreSQL connection attempt ${attempt}/${maxAttempts} failed: ${error.message}`);
         if (attempt === maxAttempts) {
-          this.logger.error(`Could not connect to PostgreSQL after ${maxAttempts} attempt(s)`);
-          throw error;
+          const fallbackUrl = process.env.FALLBACK_DATABASE_URL;
+          if (fallbackUrl) {
+            this.logger.warn(`Attempting fallback database connection to local PostgreSQL...`);
+            try {
+              (this as any)._engineConfig.datasources = [{ name: 'db', url: fallbackUrl }];
+              await this.$connect();
+              this.logger.log(`Successfully connected to Fallback Local PostgreSQL!`);
+              return;
+            } catch (fallbackError: any) {
+              this.logger.error(`Fallback database connection failed: ${fallbackError.message}`);
+            }
+          }
+          this.logger.error(`Could not connect to PostgreSQL after ${maxAttempts} attempt(s). Server continuing in Google Sheets fallback mode.`);
+          return;
         }
 
         const delay = retryDelayMs * attempt;
-        this.logger.warn(`PostgreSQL connection attempt ${attempt} failed; retrying in ${delay}ms`);
+        this.logger.warn(`Retrying database connection in ${delay}ms...`);
         await this.wait(delay);
       }
     }

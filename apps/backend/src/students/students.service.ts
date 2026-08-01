@@ -105,44 +105,51 @@ export class StudentsService {
       where.status = query.status;
     }
 
-    const [total, students] = await Promise.all([
-      this.prisma.student.count({ where }),
-      this.prisma.student.findMany({
-        where,
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          studentId: true,
-          startSession: true,
-          endSession: true,
-          dateOfApplication: true,
-          studentName: true,
-          fatherName: true,
-          dob: true,
-          mobileNumbers: true,
-          email: true,
-          motherName: true,
-          category: true,
-          fatherOccupation: true,
-          defenceService: true,
-          jobDescription: true,
-          class: true,
-          presentSchool: true,
-          batchId: true,
-          additionalLanguage: true,
-          program: true,
-          status: true,
-          createdAt: true,
-          batch: {
-            select: { id: true, name: true },
+    let total = 0;
+    let students: any[] = [];
+
+    try {
+      [total, students] = await Promise.all([
+        this.prisma.student.count({ where }),
+        this.prisma.student.findMany({
+          where,
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            studentId: true,
+            startSession: true,
+            endSession: true,
+            dateOfApplication: true,
+            studentName: true,
+            fatherName: true,
+            dob: true,
+            mobileNumbers: true,
+            email: true,
+            motherName: true,
+            category: true,
+            fatherOccupation: true,
+            defenceService: true,
+            jobDescription: true,
+            class: true,
+            presentSchool: true,
+            batchId: true,
+            additionalLanguage: true,
+            program: true,
+            status: true,
+            createdAt: true,
+            batch: {
+              select: { id: true, name: true },
+            },
           },
-        },
-        orderBy: query.sortBy
-          ? { [query.sortBy]: query.sortOrder || 'asc' }
-          : { createdAt: 'desc' },
-      }),
-    ]);
+          orderBy: query.sortBy
+            ? { [query.sortBy]: query.sortOrder || 'asc' }
+            : { createdAt: 'desc' },
+        }),
+      ]);
+    } catch (err: any) {
+      this.logger.warn(`StudentsService.findAll DB query warning: ${err.message}`);
+    }
 
     return {
       data: students.map((s: any) => this.toDto(s)),

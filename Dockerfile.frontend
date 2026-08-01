@@ -1,0 +1,49 @@
+# =========================================================
+# Multi-stage Dockerfile for Next.js Frontend (@prime/frontend)
+# =========================================================
+
+# Stage 1: Dependencies and Build
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files and workspace configuration
+COPY package*.json turbo.json ./
+COPY apps/frontend/package*.json ./apps/frontend/
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/types/package*.json ./packages/types/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY apps/frontend ./apps/frontend
+COPY packages/shared ./packages/shared
+COPY packages/types ./packages/types
+
+# Set environment variables for build time
+ENV NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+
+# Build Next.js production app
+RUN npm run build --workspace=@prime/frontend
+
+# Stage 2: Production Runner Image
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Copy Next.js production build files
+COPY --from=builder /app/apps/frontend/.next ./apps/frontend/.next
+COPY --from=builder /app/apps/frontend/package*.json ./apps/frontend/
+COPY --from=builder /app/node_modules ./node_modules
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+WORKDIR /app/apps/frontend
+CMD ["npm", "start"]

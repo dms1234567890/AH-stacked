@@ -12,6 +12,8 @@ import {
   headsApi,
   performanceApi,
   examsApi,
+  grievanceApi,
+  callingApi,
 } from './api';
 
 // ================================================================
@@ -603,6 +605,113 @@ export function useStudentPerformanceReport(
 }
 
 // ================================================================
+// Grievance Department Hooks
+// ================================================================
+
+export function useGrievanceDashboard() {
+  return useQuery({
+    queryKey: ['grievance', 'dashboard'],
+    queryFn: () => grievanceApi.getDashboard().then(r => r.data),
+    staleTime: 15000,
+  });
+}
+
+export function useGrievanceComplaints() {
+  return useQuery({
+    queryKey: ['grievance', 'complaints'],
+    queryFn: () => grievanceApi.getComplaints().then(r => r.data),
+    staleTime: 15000,
+  });
+}
+
+export function useGrievanceComplaint(complaintId: string) {
+  return useQuery({
+    queryKey: ['grievance', 'complaint', complaintId],
+    queryFn: () => grievanceApi.getComplaint(complaintId).then(r => r.data),
+    enabled: !!complaintId,
+  });
+}
+
+export function useSearchGrievanceComplaints() {
+  return useMutation({
+    mutationFn: (q: string) => grievanceApi.searchComplaints(q).then(r => r.data),
+  });
+}
+
+export function useCreateGrievanceComplaint() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => grievanceApi.createComplaint(data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['grievance'] }); },
+  });
+}
+
+export function useUpdateGrievanceComplaint() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ complaintId, data }: { complaintId: string; data: any }) =>
+      grievanceApi.updateComplaint(complaintId, data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['grievance'] }); },
+  });
+}
+
+export function useDeleteGrievanceComplaint() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (complaintId: string) => grievanceApi.deleteComplaint(complaintId).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['grievance'] }); },
+  });
+}
+
+export function useGrievancePendingCalls() {
+  return useQuery({
+    queryKey: ['grievance', 'pending-calls'],
+    queryFn: () => grievanceApi.getPendingCalls().then(r => r.data),
+    staleTime: 10000,
+  });
+}
+
+export function useGrievanceCallLogs(limit?: number) {
+  return useQuery({
+    queryKey: ['grievance', 'call-logs', limit],
+    queryFn: () => grievanceApi.getCallLogs(limit).then(r => r.data),
+    staleTime: 10000,
+  });
+}
+
+export function useGrievanceCallbacks() {
+  return useQuery({
+    queryKey: ['grievance', 'callbacks'],
+    queryFn: () => grievanceApi.getCallbacks().then(r => r.data),
+    staleTime: 10000,
+  });
+}
+
+export function useGrievanceCallSummary() {
+  return useQuery({
+    queryKey: ['grievance', 'call-summary'],
+    queryFn: () => grievanceApi.getCallSummary().then(r => r.data),
+    staleTime: 10000,
+  });
+}
+
+export function useLogGrievanceCall() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => grievanceApi.logCall(data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['grievance'] }); },
+  });
+}
+
+export function useGrievanceCallRecords(complaintId: string) {
+  return useQuery({
+    queryKey: ['grievance', 'call-records', complaintId],
+    queryFn: () => grievanceApi.getCallRecords(complaintId).then(r => r.data),
+    enabled: !!complaintId,
+  });
+}
+
+// ================================================================
 // Exams Hooks
 // ================================================================
 
@@ -635,5 +744,58 @@ export function useBootstrapExams() {
   return useMutation({
     mutationFn: () => examsApi.bootstrap().then(r => r.data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['exams'] }); },
+  });
+}
+
+// ================================================================
+// Telecaller Calling Hooks
+// ================================================================
+
+export function useCallingDashboard(params?: { date?: string; batch?: string; taskType?: string }) {
+  return useQuery({
+    queryKey: ['calling', 'dashboard', params],
+    queryFn: () => callingApi.getDashboard(params).then((r) => r.data),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useCreateManualCallTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => callingApi.createTask(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calling'] });
+    },
+  });
+}
+
+export function useUpdateCallStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => callingApi.updateStatus(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calling'] });
+    },
+  });
+}
+
+export function useSendDropMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => callingApi.sendDropMessage(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calling'] });
+    },
+  });
+}
+
+export function useMarkCallCompleted() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => callingApi.markCompleted(data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calling'] });
+    },
   });
 }

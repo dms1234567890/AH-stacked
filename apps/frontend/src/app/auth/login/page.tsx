@@ -19,7 +19,18 @@ export default function LoginPage() {
       await login(username, password);
       window.location.href = '/dashboard';
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Invalid username or password');
+      const status = err?.response?.status;
+      const message = err?.response?.data?.message;
+
+      if (!err?.response) {
+        setError('Authentication service is unavailable. Start the backend on port 3001 and try again.');
+      } else if (status === 404) {
+        setError('Authentication service is unavailable on port 3001. Check that the Nest backend is running.');
+      } else if (status >= 500) {
+        setError('Authentication service could not complete the request. Check the backend connection and try again.');
+      } else {
+        setError(message || 'Invalid username or password');
+      }
     } finally {
       setLoading(false);
     }

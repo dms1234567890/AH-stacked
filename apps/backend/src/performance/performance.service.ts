@@ -191,15 +191,20 @@ export class PerformanceService {
     const mainSheetId = process.env.GOOGLE_CLASSES_STUDENTS_SHEET_ID || '';
 
     // 1. Fetch active students from local database
-    const dbStudents = await this.prisma.student.findMany({
-      where: {
-        status: 'ACTIVE',
-        deletedAt: null,
-      },
-      include: {
-        batch: true,
-      },
-    });
+    let dbStudents: any[] = [];
+    try {
+      dbStudents = await this.prisma.student.findMany({
+        where: {
+          status: 'ACTIVE',
+          deletedAt: null,
+        },
+        include: {
+          batch: true,
+        },
+      });
+    } catch (err: any) {
+      this.logger.warn(`PerformanceService DB student query warning: ${err.message}`);
+    }
 
     const studentMap: Record<string, StudentMapValue> = {};
     const batches = new Set<string>();
@@ -527,9 +532,14 @@ export class PerformanceService {
     leaderboard.sort((a, b) => b.overall - a.overall);
 
     // 6. Fetch batch heads from database
-    const headAssignments = await this.prisma.headAssignment.findMany({
-      where: { assignmentType: 'Batch' },
-    });
+    let headAssignments: any[] = [];
+    try {
+      headAssignments = await this.prisma.headAssignment.findMany({
+        where: { assignmentType: 'Batch' },
+      });
+    } catch (err: any) {
+      this.logger.warn(`PerformanceService headAssignments query warning: ${err.message}`);
+    }
     const headMap: Record<string, string> = {};
     for (const h of headAssignments) {
       headMap[h.targetName] = h.headName;
