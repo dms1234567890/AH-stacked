@@ -1521,8 +1521,8 @@ export default function StudentsPage() {
                   {subjects?.map((subject: any) => (
                     <div key={subject.id} className="p-3 bg-slate-850 border border-slate-700 rounded-xl flex justify-between items-center text-sm">
                       <div>
-                        <div className="font-bold text-slate-200">{subject.name}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">Code: {subject.code}</div>
+                        <div className="font-bold text-slate-200">{subject.name || subject.subjectName}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">Code: {subject.code || subject.subjectCode}</div>
                       </div>
                       <button
                         onClick={() => handleDeleteSubject(subject.id, subject.name)}

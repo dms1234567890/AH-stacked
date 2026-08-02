@@ -14,9 +14,11 @@ export class SubjectsService {
     });
 
     return subjects.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
       subjectName: s.name,
       subjectCode: s.code,
-      id: s.id,
     }));
   }
 
@@ -37,6 +39,8 @@ export class SubjectsService {
 
     return {
       id: subject.id,
+      name: subject.name,
+      code: subject.code,
       subjectName: subject.name,
       subjectCode: subject.code,
     };
