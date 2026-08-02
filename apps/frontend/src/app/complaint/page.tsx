@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Complaint {
   complaintId: string;
@@ -82,7 +83,7 @@ export default function ComplaintPage() {
   const fetchComplaints = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/v1/grievance/complaints');
+      const res = await fetch(`${API_BASE_URL}/grievance/complaints`);
       if (res.ok) {
         const data = await res.json();
         setComplaints(Array.isArray(data) ? data : []);
@@ -103,7 +104,7 @@ export default function ComplaintPage() {
     const timer = setTimeout(async () => {
       setSearchingStudents(true);
       try {
-        const res = await fetch(`http://localhost:3001/api/v1/students?search=${encodeURIComponent(studentSearch)}`);
+        const res = await fetch(`${API_BASE_URL}/students?search=${encodeURIComponent(studentSearch)}`);
         if (res.ok) {
           const data = await res.json();
           setStudentResults(Array.isArray(data) ? data.slice(0, 8) : []);
@@ -145,7 +146,7 @@ export default function ComplaintPage() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('http://localhost:3001/api/v1/grievance/complaints', {
+      const res = await fetch(`${API_BASE_URL}/grievance/complaints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Requisition {
   id: string;
@@ -85,7 +86,7 @@ export default function JobRequirementPage() {
 
   const fetchBootstrapData = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/v1/jobs/bootstrap');
+      const res = await fetch(`${API_BASE_URL}/jobs/bootstrap`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.departments) && data.departments.length > 0) {
@@ -136,7 +137,7 @@ export default function JobRequirementPage() {
     };
 
     try {
-      const res = await fetch('http://localhost:3001/api/v1/jobs/requisitions', {
+      const res = await fetch(`${API_BASE_URL}/jobs/requisitions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
