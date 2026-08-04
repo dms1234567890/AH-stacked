@@ -81,8 +81,8 @@ export class StudentsService {
   ) {}
 
   async findAll(query: FindAllQuery): Promise<PaginatedResult<StudentDto>> {
-    const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 30));
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(5000, Math.max(1, Number(query.limit) || 500));
     const skip = (page - 1) * limit;
 
     const where: any = { deletedAt: null };

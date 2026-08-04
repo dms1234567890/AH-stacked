@@ -72,12 +72,12 @@ export default function StudentsPage() {
   // React Query Hooks
   const { data: activeStudents, isLoading: isLoadingActive, refetch: refetchActive } = useStudents({
     status: 'ACTIVE',
-    limit: 200,
+    limit: 2000,
   });
 
   const { data: allStudents, isLoading: isLoadingAll, refetch: refetchAll } = useStudents({
     search: search || undefined,
-    limit: 100,
+    limit: 2000,
   });
 
   const { data: newStudents, isLoading: isLoadingNew, refetch: refetchNew } = useNewStudents();
